@@ -19,30 +19,30 @@
 #include <string.h>
 #include <riscv_vector.h>
 
-void vpx_fdct4x4_1_rvv(const int16_t *input, tran_low_t *output, int stride) {
+void vpx_fdct4x4_1_rvv(const int16_t *input, tran_low_t *output, int stride){
 
-    printf("ddw vpx_fdct4x4_1_c stride = %d, sizeof(input) = %d\n",stride,sizeof(input));
     const size_t vl = 4;
-    int16_t ones[4] = {1,1,1,1};
-    int16_t zeros[4] = {0};
+    vint16mf2_t a0, a1, a2, a3, b0, b1, c0;
 
-    vuint16m1_t output_v = __riscv_vle16_v_u16m1(zeros,vl);;
-    vuint16m1_t input_v;
-    vuint16m1_t ones_v = __riscv_vle16_v_u16m1(ones,vl);
-    vuint16m1_t zeros_v = __riscv_vle16_v_u16m1(zeros,vl);
-    tran_low_t *output_tmp =  (int16_t *)malloc(vl * sizeof(int16_t));;
+    a0 = __riscv_vle16_v_i16mf2(input,vl);
+    input += stride;
+    a1 = __riscv_vle16_v_i16mf2(input,vl);
+    input += stride;
+    a2 = __riscv_vle16_v_i16mf2(input,vl);
+    input += stride;
+    a3 = __riscv_vle16_v_i16mf2(input,vl);
 
-    int r, c;
-    tran_low_t sum = 0;
+    b0 = __riscv_vadd_vv_i16mf2 (a0, a1, vl);
+    b1 = __riscv_vadd_vv_i16mf2 (a2, a3, vl);
 
-    for (r = 0; r < 4; ++r){
-        input_v = __riscv_vle16_v_u16m1(input + r * stride, vl);
-        output_v = __riscv_vmacc_vv_u16m1 (output_v, input_v, ones_v,vl);
-    }
+    c0 = __riscv_vadd_vv_i16mf2 (b0, b1, vl);
 
-    output_v = __riscv_vredsum_vs_u16m1_u16m1 (output_v, zeros_v, vl);
-    __riscv_vse16_v_u16m1(output_tmp, output_v, vl);
-    output[0] = output_tmp[0] * 2;
+    vint16m1_t vzero =  __riscv_vmv_v_x_i16m1(0, vl);
+    vint16m1_t vd = __riscv_vredsum_vs_i16mf2_i16m1(c0, vzero, vl);
 
-    //printf("ddw vpx_fdct4x4_1_c\n");
+    vd = __riscv_vsll_vx_i16m1 (vd, 1, vl);
+
+    uint8_t mask[] = {1};
+    vbool16_t vmask = __riscv_vlm_v_b16 (mask, vl);
+    __riscv_vse16_v_i16m1_m(vmask, output, vd, vl);
 }
