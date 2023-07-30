@@ -26,6 +26,11 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
+#include <riscv_vector.h>
+#include <stdio.h>
+#include "./vpx_config.h"
+#include "./vp8_rtcd.h"
+
 using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
 using std::make_tuple;
@@ -141,6 +146,12 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(&vpx_fdct4x4_1_sse2, 4, VPX_BITS_8)));
 #endif  // HAVE_SSE2
 
+#if HAVE_RVV
+INSTANTIATE_TEST_SUITE_P(
+    RVV, PartialFdctTest,
+     ::testing::Values(
+                      make_tuple(&vpx_fdct4x4_1_rvv, 4, VPX_BITS_8)));
+#endif  // HAVE_SSE2
 #if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_SUITE_P(

@@ -219,6 +219,7 @@ DSP_SRCS-$(HAVE_LSX)    += loongarch/txfm_macros_lsx.h
 ifeq ($(CONFIG_VP9_ENCODER),yes)
 DSP_SRCS-yes            += fwd_txfm.c
 DSP_SRCS-yes            += fwd_txfm.h
+DSP_SRCS-$(HAVE_RVV)    += riscv/fwd_txfm_rvv.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/fwd_txfm_sse2.h
 DSP_SRCS-$(HAVE_SSE2)   += x86/fwd_txfm_sse2.c
 DSP_SRCS-$(HAVE_SSE2)   += x86/fwd_txfm_impl_sse2.h
@@ -420,6 +421,8 @@ DSP_SRCS-$(HAVE_LSX)    += loongarch/variance_lsx.h
 DSP_SRCS-$(HAVE_LSX)    += loongarch/variance_lsx.c
 DSP_SRCS-$(HAVE_LSX)    += loongarch/sub_pixel_variance_lsx.c
 DSP_SRCS-$(HAVE_LSX)    += loongarch/avg_pred_lsx.c
+
+DSP_SRCS-$(HAVE_RVV)    += riscv/avg_pred_rvv.c
 
 DSP_SRCS-$(HAVE_MMI)    += mips/variance_mmi.c
 

@@ -588,7 +588,7 @@ if (vpx_config("CONFIG_VP9_HIGHBITDEPTH") eq "yes") {
   specialize qw/vpx_fdct4x4 neon sse2 msa lsx/;
 
   add_proto qw/void vpx_fdct4x4_1/, "const int16_t *input, tran_low_t *output, int stride";
-  specialize qw/vpx_fdct4x4_1 sse2 neon/;
+  specialize qw/vpx_fdct4x4_1 sse2 neon rvv/;
 
   add_proto qw/void vpx_fdct8x8/, "const int16_t *input, tran_low_t *output, int stride";
   specialize qw/vpx_fdct8x8 sse2 neon msa lsx/, "$ssse3_x86_64";
@@ -1321,7 +1321,7 @@ add_proto qw/unsigned int vpx_get4x4sse_cs/, "const unsigned char *src_ptr, int 
   specialize qw/vpx_get4x4sse_cs neon msa vsx/;
 
 add_proto qw/void vpx_comp_avg_pred/, "uint8_t *comp_pred, const uint8_t *pred, int width, int height, const uint8_t *ref, int ref_stride";
-  specialize qw/vpx_comp_avg_pred neon sse2 avx2 vsx lsx/;
+  specialize qw/vpx_comp_avg_pred neon rvv sse2 avx2 vsx lsx/;
 
 #
 # Subpixel Variance
