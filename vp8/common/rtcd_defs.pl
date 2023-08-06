@@ -167,7 +167,7 @@ add_proto qw/void vp8_bilinear_predict8x4/, "unsigned char *src_ptr, int src_pix
 specialize qw/vp8_bilinear_predict8x4 sse2 neon msa/;
 
 add_proto qw/void vp8_bilinear_predict4x4/, "unsigned char *src_ptr, int src_pixels_per_line, int xoffset, int yoffset, unsigned char *dst_ptr, int dst_pitch";
-specialize qw/vp8_bilinear_predict4x4 sse2 neon msa/;
+specialize qw/vp8_bilinear_predict4x4 sse2 neon rvv msa/;
 
 #
 # Encoder functions below this point.
