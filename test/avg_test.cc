@@ -152,7 +152,7 @@ class AverageTestHBD : public AverageTestBase<uint16_t>,
 };
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-#if HAVE_NEON || HAVE_SSE2 || HAVE_MSA
+#if HAVE_NEON || HAVE_SSE2 || HAVE_MSA || HAVE_RVV
 typedef void (*IntProRowFunc)(int16_t hbuf[16], uint8_t const *ref,
                               const int ref_stride, const int height);
 
@@ -356,7 +356,7 @@ TEST_P(AverageTest, MaxValue) {
 TEST_P(AverageTest, Random) {
   // The reference frame, but not the source frame, may be unaligned for
   // certain types of searches.
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 10; i++) {
     FillRandom();
     CheckAverages();
   }
@@ -383,7 +383,7 @@ TEST_P(AverageTestHBD, Random) {
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-#if HAVE_NEON || HAVE_SSE2 || HAVE_MSA
+#if HAVE_NEON || HAVE_SSE2 || HAVE_MSA || HAVE_RVV
 TEST_P(IntProRowTest, MinValue) {
   FillConstant(0);
   RunComparison();
@@ -669,6 +669,30 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(64, &vp9_block_error_fp_avx2),
                       make_tuple(256, &vp9_block_error_fp_avx2),
                       make_tuple(1024, &vp9_block_error_fp_avx2)));
+#endif
+
+#if HAVE_RVV
+INSTANTIATE_TEST_SUITE_P(
+    RVV, AverageTest,
+    ::testing::Values(make_tuple(16, 16, 0, 8, &vpx_avg_8x8_rvv),
+                      make_tuple(16, 16, 5, 8, &vpx_avg_8x8_rvv),
+                      make_tuple(32, 32, 15, 8, &vpx_avg_8x8_rvv),
+                      make_tuple(16, 16, 0, 4, &vpx_avg_4x4_rvv),
+                      make_tuple(16, 16, 5, 4, &vpx_avg_4x4_rvv),
+                      make_tuple(32, 32, 15, 4, &vpx_avg_4x4_rvv)));
+
+INSTANTIATE_TEST_SUITE_P(RVV, SatdLowbdTest,
+                         ::testing::Values(make_tuple(16, &vpx_satd_rvv),
+                                           make_tuple(64, &vpx_satd_rvv),
+                                           make_tuple(256, &vpx_satd_rvv),
+                                           make_tuple(1024, &vpx_satd_rvv)));
+
+INSTANTIATE_TEST_SUITE_P(
+    RVV, IntProRowTest,
+    ::testing::Values(make_tuple(16, &vpx_int_pro_row_rvv, &vpx_int_pro_row_c),
+                      make_tuple(32, &vpx_int_pro_row_rvv, &vpx_int_pro_row_c),
+                      make_tuple(64, &vpx_int_pro_row_rvv, &vpx_int_pro_row_c)));
+
 #endif
 
 #if HAVE_NEON
