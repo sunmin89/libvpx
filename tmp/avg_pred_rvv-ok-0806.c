@@ -1,0 +1,129 @@
+#include <assert.h>
+#include "./vpx_dsp_rtcd.h"
+#include <riscv_vector.h>
+
+/***
+ * This function appends contents of b[] to the end of a[].
+ * a[] is of size m+n and b[] is of size n. 
+*/
+void concat(uint8_t a[], uint8_t b[], int m, int n)
+{
+    memcpy(a + m, b, sizeof(b));
+}
+void vpx_comp_avg_pred_rvv(uint8_t *comp_pred, const uint8_t *pred, int width,
+                         int height, const uint8_t *ref, int ref_stride) {
+if(width > 8){
+    int x, y = height;
+    size_t vl;
+    vuint8m1_t vp,vr,vavg;
+    do {
+      for (x = 0; x < width; x += 16) {
+        
+        vl = 16;
+        vp = __riscv_vle8_v_u8m1(pred + x, vl);
+        vr = __riscv_vle8_v_u8m1(ref + x, vl);
+
+        vuint16m2_t vv = __riscv_vwaddu_vv_u16m2(vr, vp, vl);
+        vv = __riscv_vadd_vx_u16m2(vv, 1, vl);
+
+        vr = __riscv_vnsrl_wx_u8m1 (vv, 1, vl);
+        __riscv_vse8_v_u8m1(comp_pred + x, vr, vl);
+
+      }
+      comp_pred += width;
+      pred += width;
+      ref += ref_stride;
+    } while (--y);
+}
+else if (width == 8) {
+    // printf("ddw 2\n");
+    int i = width * height;
+    size_t vl;
+    vuint8m1_t vr;
+    vuint8m1_t vr_0, vr_1, vv;
+    uint8_t a[16] = {0};
+    uint8_t b[8] = {0};
+    do {
+    vl = 16;  
+
+    const vuint8m1_t vp = __riscv_vle8_v_u8m1(pred, vl);
+
+    vr_0 = __riscv_vle8_v_u8m1(ref, vl / 2);
+    __riscv_vse8_v_u8m1(a, vr_0, vl / 2);
+    vr_1 = __riscv_vle8_v_u8m1(ref + ref_stride, vl / 2);
+    __riscv_vse8_v_u8m1(b, vr_1, vl / 2);
+    
+    concat(a,b,8,8);
+
+    vr = __riscv_vle8_v_u8m1(a, vl);
+
+    vuint16m2_t vv = __riscv_vwaddu_vv_u16m2(vr, vp, vl);
+    vv = __riscv_vadd_vx_u16m2(vv, 1, vl);
+    vv = __riscv_vsrl_vx_u16m2(vv, 1, vl);
+
+    vr = __riscv_vncvt_x_x_w_u8m1(vv, vl);
+
+    ref += 2 * ref_stride;
+
+    __riscv_vse8_v_u8m1(comp_pred, vr, vl);
+    pred += 16;
+    comp_pred += 16;
+    i -= 16;
+    } while (i);
+  } else {
+    int i = width * height;
+
+    size_t vl = __riscv_vsetvl_e8m1(16);
+    
+    assert(width == 4);
+   
+    if(width == ref_stride){
+      do {
+        // alias ddw=target remote localhost:1234
+        size_t vl = 16;
+        vuint8m1_t vr;
+        const vuint8m1_t vp  = __riscv_vle8_v_u8m1(pred, vl);
+        vr = __riscv_vle8_v_u8m1(ref, vl);
+        vr = __riscv_vadd_vx_u8m1(vr, 1, vl);
+        ref += 4 * ref_stride;
+
+        vuint16m2_t vv = __riscv_vwaddu_vv_u16m2(vr, vp, vl);
+        vr = __riscv_vnsrl_wx_u8m1 (vv, 1, vl);
+        __riscv_vse8_v_u8m1(comp_pred, vr, vl);
+
+        pred += 16;
+        comp_pred += 16;
+        i -= 16; 
+      }while (i);
+  }
+  else {
+      do{
+        /* code */
+        uint32_t a;
+        vuint32m1_t a_u32;
+        size_t vl = 16;
+        const vuint8m1_t vp  = __riscv_vle8_v_u8m1(pred, vl);
+        a_u32 = __riscv_vlse32_v_u32m1(ref, ref_stride, vl / 4);
+
+        vuint8m1_t vr = __riscv_vreinterpret_v_u32m1_u8m1(a_u32);
+
+        ref += 4 * ref_stride;
+
+        vuint16m2_t vv = __riscv_vwaddu_vv_u16m2(vr, vp, vl);
+
+        vv = __riscv_vadd_vx_u16m2(vv, 1, vl);
+		
+		    vv = __riscv_vsrl_vx_u16m2(vv, 1, vl);
+
+		    vr = __riscv_vncvt_x_x_w_u8m1(vv, vl);
+
+        
+        __riscv_vse8_v_u8m1(comp_pred, vr, vl);
+
+        pred += 16;
+        comp_pred += 16;
+        i -= 16;  
+    } while (i);
+  }
+  }
+}
